@@ -3,6 +3,12 @@ go-ebay
 
 An ebay search api client in golang.
 
+Install
+-------
+You'll need to have golang installed.
+
+	$ go get github.com/heatxsink/go-ebay
+
 Example
 -------
 ```go
@@ -13,7 +19,6 @@ import (
 var (
 	ebay_application_id = "your_application_id_here"
 )
-
 
 func main() {
 	e := ebay.New(ebay_application_id)
