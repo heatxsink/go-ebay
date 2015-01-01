@@ -1,12 +1,13 @@
 package ebay
 
 import (
-	"fmt"
 	"encoding/xml"
-	"strconv"
-	"net/url"
 	"errors"
+	"fmt"
 	"github.com/heatxsink/go-httprequest"
+	"net/url"
+	"strconv"
+	"time"
 )
 
 const (
@@ -18,58 +19,80 @@ const (
 )
 
 type Item struct {
-	ItemId string `xml:"itemId"`
-	Title string `xml:"title"`
-	Location string `xml:"location"`
-	CurrentPrice float64 `xml:"sellingStatus>currentPrice"`
-	ShippingPrice float64 `xml:"shippingInfo>shippingServiceCost"`
-	BinPrice float64 `xml:"listingInfo>buyItNowPrice"`
-	ShipsTo []string  `xml:"shippingInfo>shipToLocations"`
-	ListingUrl string `xml:"viewItemURL"`
-	ImageUrl string `xml:"galleryURL"`
-	Site string `xml:"globalId"`
+	ItemId        string    `xml:"itemId"`
+	Title         string    `xml:"title"`
+	Location      string    `xml:"location"`
+	CurrentPrice  float64   `xml:"sellingStatus>currentPrice"`
+	ShippingPrice float64   `xml:"shippingInfo>shippingServiceCost"`
+	BinPrice      float64   `xml:"listingInfo>buyItNowPrice"`
+	ShipsTo       []string  `xml:"shippingInfo>shipToLocations"`
+	ListingUrl    string    `xml:"viewItemURL"`
+	ImageUrl      string    `xml:"galleryURL"`
+	Site          string    `xml:"globalId"`
+	EndTime       time.Time `xml:"listingInfo>endTime"`
 }
 
-type FindItemsByKeywordResponse struct {
-	XmlName xml.Name `xml:"findItemsByKeywordsResponse"`
-	Items []Item `xml:"searchResult>item"`
-	Timestamp string `xml:"timestamp"`
+type FindItemsResponse struct {
+	XmlName   xml.Name `xml:"findItemsByKeywordsResponse"`
+	Items     []Item   `xml:"searchResult>item"`
+	Timestamp string   `xml:"timestamp"`
 }
 
 type ErrorMessage struct {
 	XmlName xml.Name `xml:"errorMessage"`
-	Error Error `xml:"error"`
+	Error   Error    `xml:"error"`
 }
 
 type Error struct {
-	ErrorId string `xml:"errorId"`
-	Domain string `xml:"domain"`
-	Severity string `xml:"severity"`
-	Category string `xml:"category"`
-	Message string `xml:"message"`
+	ErrorId   string `xml:"errorId"`
+	Domain    string `xml:"domain"`
+	Severity  string `xml:"severity"`
+	Category  string `xml:"category"`
+	Message   string `xml:"message"`
 	SubDomain string `xml:"subdomain"`
 }
 
 type EBay struct {
 	ApplicationId string
-	HttpRequest *httprequest.HttpRequest
+	HttpRequest   *httprequest.HttpRequest
 }
 
+type getUrl func(string, string, int) (string, error)
+
 func New(application_id string) *EBay {
-	e := EBay {}
+	e := EBay{}
 	e.ApplicationId = application_id
 	e.HttpRequest = httprequest.NewWithDefaults()
 	return &e
-} 
+}
+
+func (e *EBay) build_sold_url(global_id string, keywords string, entries_per_page int) (string, error) {
+	filters := url.Values{}
+	filters.Add("itemFilter(0).name", "Condition")
+	filters.Add("itemFilter(0).value(0)", "Used")
+	filters.Add("itemFilter(0).value(1)", "Unspecified")
+	filters.Add("itemFilter(1).name", "SoldItemsOnly")
+	filters.Add("itemFilter(1).value(0)", "true")
+	return e.build_url(global_id, keywords, "findCompletedItems", entries_per_page, filters)
+}
 
 func (e *EBay) build_search_url(global_id string, keywords string, entries_per_page int) (string, error) {
+	filters := url.Values{}
+	filters.Add("itemFilter(0).name", "ListingType")
+	filters.Add("itemFilter(0).value(0)", "FixedPrice")
+	filters.Add("itemFilter(0).value(1)", "AuctionWithBIN")
+	filters.Add("itemFilter(0).value(2)", "Auction")
+	return e.build_url(global_id, keywords, "findItemsByKeywords", entries_per_page, filters)
+}
+
+func (e *EBay) build_url(global_id string, keywords string, operationName string, entries_per_page int, filters url.Values) (string, error) {
 	var u *url.URL
 	u, err := url.Parse("http://svcs.ebay.com/services/search/FindingService/v1")
 	if err != nil {
 		return "", err
 	}
 	params := url.Values{}
-	params.Add("OPERATION-NAME", "findItemsByKeywords")
+	params.Add("OPERATION-NAME", operationName)
 	params.Add("SERVICE-VERSION", "1.0.0")
 	params.Add("SECURITY-APPNAME", e.ApplicationId)
 	params.Add("GLOBAL-ID", global_id)
@@ -77,16 +100,18 @@ func (e *EBay) build_search_url(global_id string, keywords string, entries_per_p
 	params.Add("REST-PAYLOAD", "")
 	params.Add("keywords", keywords)
 	params.Add("paginationInput.entriesPerPage", strconv.Itoa(entries_per_page))
-	params.Add("itemFilter(0).name", "ListingType")
-	params.Add("itemFilter(0).value(0)", "FixedPrice")
-	params.Add("itemFilter(0).value(1)", "AuctionWithBIN")
+	for key := range filters {
+		for _, val := range filters[key] {
+			params.Add(key, val)
+		}
+	}
 	u.RawQuery = params.Encode()
 	return u.String(), err
 }
 
-func (e *EBay) FindItemsByKeywords(global_id string, keywords string, entries_per_page int) (FindItemsByKeywordResponse, error) {
-	var response FindItemsByKeywordResponse
-	url, err := e.build_search_url(global_id, keywords, entries_per_page)
+func (e *EBay) findItems(global_id string, keywords string, entries_per_page int, getUrl getUrl) (FindItemsResponse, error) {
+	var response FindItemsResponse
+	url, err := getUrl(global_id, keywords, entries_per_page)
 	if err != nil {
 		return response, err
 	}
@@ -112,8 +137,16 @@ func (e *EBay) FindItemsByKeywords(global_id string, keywords string, entries_pe
 	return response, err
 }
 
-func (r *FindItemsByKeywordResponse) Dump() {
-	fmt.Println("FindItemsByKeywordResponse")
+func (e *EBay) FindItemsByKeywords(global_id string, keywords string, entries_per_page int) (FindItemsResponse, error) {
+	return e.findItems(global_id, keywords, entries_per_page, e.build_search_url)
+}
+
+func (e *EBay) FindSoldItems(global_id string, keywords string, entries_per_page int) (FindItemsResponse, error) {
+	return e.findItems(global_id, keywords, entries_per_page, e.build_sold_url)
+}
+
+func (r *FindItemsResponse) Dump() {
+	fmt.Println("FindItemsResponse")
 	fmt.Println("--------------------------")
 	fmt.Println("Timestamp: ", r.Timestamp)
 	fmt.Println("Items:")
