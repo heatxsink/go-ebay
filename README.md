@@ -13,7 +13,7 @@ Example
 -------
 ```go
 import (
-	"github.com/heatxsink/go-ebay"
+	"github.com/rmpacheco/go-ebay"
 )
 
 var (
