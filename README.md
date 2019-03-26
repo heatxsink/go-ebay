@@ -7,7 +7,7 @@ Install
 -------
 You'll need to have golang installed.
 
-	$ go get github.com/heatxsink/go-ebay
+	$ go get github.com/rmpacheco/go-ebay
 
 Example
 -------
