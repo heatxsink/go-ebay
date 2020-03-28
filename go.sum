@@ -1,0 +1,4 @@
+github.com/heatxsink/go-httprequest v0.0.0-20141001215716-dd7fa67ea210 h1:YVZ5t1nVeFREAf2ISrvGJ7caYUpSrSVlL590aP7zxro=
+github.com/heatxsink/go-httprequest v0.0.0-20141001215716-dd7fa67ea210/go.mod h1:hFqDddGnarVxp2Wt5qJ+yqaRYgum+CLFXd/AzVTHomI=
+github.com/mreiferson/go-httpclient v0.0.0-20160630210159-31f0106b4474 h1:oKIteTqeSpenyTrOVj5zkiyCaflLa8B+CD0324otT+o=
+github.com/mreiferson/go-httpclient v0.0.0-20160630210159-31f0106b4474/go.mod h1:OQA4XLvDbMgS8P0CevmM4m9Q3Jq4phKUzcocxuGJ5m8=

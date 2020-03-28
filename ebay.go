@@ -38,6 +38,12 @@ type FindItemsResponse struct {
 	Timestamp string   `xml:"timestamp"`
 }
 
+type FindCompletedITemsResponse struct {
+	XMLName   xml.Name `xml:"findCompletedItemsResponse"`
+	Items     []Item   `xml:"searchResult>item"`
+	Timestamp string   `xml:"timestamp"`
+}
+
 type ErrorMessage struct {
 	XMLName xml.Name `xml:"errorMessage"`
 	Error   Error    `xml:"error"`
@@ -138,25 +144,65 @@ func (e *EBay) findItems(globalID string, keywords string, entriesPerPage int, u
 }
 
 func (e *EBay) FindItemsByKeywords(globalID string, keywords string, entriesPerPage int, binOnly bool) (FindItemsResponse, error) {
+	var response FindItemsResponse
 	url, err := e.buildSearchURL(globalID, keywords, entriesPerPage, binOnly)
 	if err != nil {
 		var response FindItemsResponse
 		return response, err
 	}
-	return e.findItems(globalID, keywords, entriesPerPage, url)
+	headers := make(map[string]string)
+	headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.56 Safari/535.11"
+	body, statusCode, err := e.HTTPRequest.Get(url, headers)
+	if err != nil {
+		return response, err
+	}
+	if statusCode != 200 {
+		var em ErrorMessage
+		err = xml.Unmarshal([]byte(body), &em)
+		if err != nil {
+			return response, err
+		}
+		return response, errors.New(em.Error.Message)
+	} else {
+		err = xml.Unmarshal([]byte(body), &response)
+		if err != nil {
+			return response, err
+		}
+	}
+	return response, err
 }
 
-func (e *EBay) FindSoldItems(globalID string, keywords string, entriesPerPage int) (FindItemsResponse, error) {
+func (e *EBay) FindSoldItems(globalID string, keywords string, entriesPerPage int) (FindCompletedITemsResponse, error) {
+	var response FindCompletedITemsResponse
 	url, err := e.buildSoldURL(globalID, keywords, entriesPerPage)
 	println("2")
 	println(url)
 	if err != nil {
 		println("3")
-		var response FindItemsResponse
+
 		return response, err
 	}
 	println("4")
-	return e.findItems(globalID, keywords, entriesPerPage, url)
+	headers := make(map[string]string)
+	headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.56 Safari/535.11"
+	body, statusCode, err := e.HTTPRequest.Get(url, headers)
+	if err != nil {
+		return response, err
+	}
+	if statusCode != 200 {
+		var em ErrorMessage
+		err = xml.Unmarshal([]byte(body), &em)
+		if err != nil {
+			return response, err
+		}
+		return response, errors.New(em.Error.Message)
+	} else {
+		err = xml.Unmarshal([]byte(body), &response)
+		if err != nil {
+			return response, err
+		}
+	}
+	return response, err
 }
 
 // func (r *FindItemsResponse) Dump() {
