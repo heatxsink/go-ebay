@@ -12,7 +12,7 @@ var (
 func TestFindItemsByKeywords(t *testing.T) {
 	fmt.Println("ebay.FindItemsByKeywords")
 	e := New(test_application_id)
-	response, err := e.FindItemsByKeywords(GLOBAL_ID_EBAY_US, "DJM 900, DJM 850", 10)
+	response, err := e.FindItemsByKeywords(GLOBAL_ID_EBAY_US, "DJM 900, DJM 850", 10, false)
 	if err != nil {
 		t.Errorf("ERROR: ", err)
 	} else {
