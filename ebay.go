@@ -148,6 +148,8 @@ func (e *EBay) FindItemsByKeywords(globalID string, keywords string, entriesPerP
 
 func (e *EBay) FindSoldItems(globalID string, keywords string, entriesPerPage int) (FindItemsResponse, error) {
 	url, err := e.buildSoldURL(globalID, keywords, entriesPerPage)
+	println("2")
+	println(url)
 	if err != nil {
 		var response FindItemsResponse
 		return response, err
