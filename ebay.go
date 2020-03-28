@@ -146,6 +146,7 @@ func (e *EBay) findItems(globalID string, keywords string, entriesPerPage int, u
 func (e *EBay) FindItemsByKeywords(globalID string, keywords string, entriesPerPage int, binOnly bool) (FindItemsResponse, error) {
 	var response FindItemsResponse
 	url, err := e.buildSearchURL(globalID, keywords, entriesPerPage, binOnly)
+	println("search url = " + url)
 	if err != nil {
 		var response FindItemsResponse
 		return response, err
@@ -175,14 +176,9 @@ func (e *EBay) FindItemsByKeywords(globalID string, keywords string, entriesPerP
 func (e *EBay) FindSoldItems(globalID string, keywords string, entriesPerPage int) (FindCompletedITemsResponse, error) {
 	var response FindCompletedITemsResponse
 	url, err := e.buildSoldURL(globalID, keywords, entriesPerPage)
-	println("2")
-	println(url)
 	if err != nil {
-		println("3")
-
 		return response, err
 	}
-	println("4")
 	headers := make(map[string]string)
 	headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.56 Safari/535.11"
 	body, statusCode, err := e.HTTPRequest.Get(url, headers)
