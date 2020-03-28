@@ -151,9 +151,11 @@ func (e *EBay) FindSoldItems(globalID string, keywords string, entriesPerPage in
 	println("2")
 	println(url)
 	if err != nil {
+		println("3")
 		var response FindItemsResponse
 		return response, err
 	}
+	println("4")
 	return e.findItems(globalID, keywords, entriesPerPage, url)
 }
 
