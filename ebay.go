@@ -86,10 +86,10 @@ func (e *EBay) buildSoldURL(globalID string, keywords string, entriesPerPage int
 func (e *EBay) buildSearchURL(globalID string, keywords string, entriesPerPage int, binOnly bool) (string, error) {
 	filters := url.Values{}
 	filters.Add("itemFilter(0).name", "ListingType")
-	filters.Add("itemFilter(0).value(0)", "FixedPrice")
-	filters.Add("itemFilter(0).value(1)", "AuctionWithBIN")
+	filters.Add("itemFilter(0).value(0)", "AuctionWithBIN")
 
 	if !binOnly {
+		filters.Add("itemFilter(0).value(1)", "FixedPrice")
 		filters.Add("itemFilter(0).value(2)", "Auction")
 	}
 	return e.buildURL(globalID, keywords, "findItemsByKeywords", entriesPerPage, filters)
