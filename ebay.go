@@ -18,6 +18,7 @@ const (
 	GLOBAL_ID_EBAY_ES = "EBAY-ES"
 )
 
+// Item for sale on EBay
 type Item struct {
 	ItemID        string    `xml:"itemId"`
 	Title         string    `xml:"title"`
@@ -32,23 +33,27 @@ type Item struct {
 	EndTime       time.Time `xml:"listingInfo>endTime"`
 }
 
+// FindItemsResponse from EBay
 type FindItemsResponse struct {
 	XMLName   xml.Name `xml:"findItemsByKeywordsResponse"`
 	Items     []Item   `xml:"searchResult>item"`
 	Timestamp string   `xml:"timestamp"`
 }
 
-type FindCompletedITemsResponse struct {
+// FindCompletedItemsResponse from EBay
+type FindCompletedItemsResponse struct {
 	XMLName   xml.Name `xml:"findCompletedItemsResponse"`
 	Items     []Item   `xml:"searchResult>item"`
 	Timestamp string   `xml:"timestamp"`
 }
 
+// ErrorMessage from EBay
 type ErrorMessage struct {
 	XMLName xml.Name `xml:"errorMessage"`
 	Error   Error    `xml:"error"`
 }
 
+// Error response from EBay
 type Error struct {
 	ErrorID   string `xml:"errorId"`
 	Domain    string `xml:"domain"`
@@ -58,17 +63,19 @@ type Error struct {
 	SubDomain string `xml:"subdomain"`
 }
 
+// EBay API request
 type EBay struct {
 	ApplicationID string
 	HTTPRequest   *httprequest.HttpRequest
 }
 
-type soldUrl func(string, string, int) (string, error)
-type searchUrl func(string, string, int, bool) (string, error)
+type soldURL func(string, string, int) (string, error)
+type searchURL func(string, string, int, bool) (string, error)
 
-func New(application_id string) *EBay {
+// New EBay API request
+func New(applicationID string) *EBay {
 	e := EBay{}
-	e.ApplicationID = application_id
+	e.ApplicationID = applicationID
 	e.HTTPRequest = httprequest.NewWithDefaults()
 	return &e
 }
@@ -134,15 +141,16 @@ func (e *EBay) findItems(globalID string, keywords string, entriesPerPage int, u
 			return response, err
 		}
 		return response, errors.New(em.Error.Message)
-	} else {
-		err = xml.Unmarshal([]byte(body), &response)
-		if err != nil {
-			return response, err
-		}
 	}
+	err = xml.Unmarshal([]byte(body), &response)
+	if err != nil {
+		return response, err
+	}
+
 	return response, err
 }
 
+// FindItemsByKeywords returns items matching the keyword search terms
 func (e *EBay) FindItemsByKeywords(globalID string, keywords string, entriesPerPage int, binOnly bool) (FindItemsResponse, error) {
 	var response FindItemsResponse
 	url, err := e.buildSearchURL(globalID, keywords, entriesPerPage, binOnly)
@@ -164,17 +172,17 @@ func (e *EBay) FindItemsByKeywords(globalID string, keywords string, entriesPerP
 			return response, err
 		}
 		return response, errors.New(em.Error.Message)
-	} else {
-		err = xml.Unmarshal([]byte(body), &response)
-		if err != nil {
-			return response, err
-		}
+	}
+	err = xml.Unmarshal([]byte(body), &response)
+	if err != nil {
+		return response, err
 	}
 	return response, err
 }
 
-func (e *EBay) FindSoldItems(globalID string, keywords string, entriesPerPage int) (FindCompletedITemsResponse, error) {
-	var response FindCompletedITemsResponse
+// FindSoldItems returns sold items by keyword
+func (e *EBay) FindSoldItems(globalID string, keywords string, entriesPerPage int) (FindCompletedItemsResponse, error) {
+	var response FindCompletedItemsResponse
 	url, err := e.buildSoldURL(globalID, keywords, entriesPerPage)
 	if err != nil {
 		return response, err
@@ -192,30 +200,11 @@ func (e *EBay) FindSoldItems(globalID string, keywords string, entriesPerPage in
 			return response, err
 		}
 		return response, errors.New(em.Error.Message)
-	} else {
-		err = xml.Unmarshal([]byte(body), &response)
-		if err != nil {
-			return response, err
-		}
 	}
+	err = xml.Unmarshal([]byte(body), &response)
+	if err != nil {
+		return response, err
+	}
+
 	return response, err
 }
-
-// func (r *FindItemsResponse) Dump() {
-// 	fmt.Println("FindItemsResponse")
-// 	fmt.Println("--------------------------")
-// 	fmt.Println("Timestamp: ", r.Timestamp)
-// 	fmt.Println("Items:")
-// 	fmt.Println("------")
-// 	for _, i := range r.Items {
-// 		fmt.Println("Title: ", i.Title)
-// 		fmt.Println("------")
-// 		fmt.Println("\tListing Url:     ", i.ListingUrl)
-// 		fmt.Println("\tBin Price:       ", i.BinPrice)
-// 		fmt.Println("\tCurrent Price:   ", i.CurrentPrice)
-// 		fmt.Println("\tShipping Price:  ", i.ShippingPrice)
-// 		fmt.Println("\tShips To:        ", i.ShipsTo)
-// 		fmt.Println("\tSeller Location: ", i.Location)
-// 		fmt.Println()
-// 	}
-// }
